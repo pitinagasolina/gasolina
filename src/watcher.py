@@ -1,5 +1,6 @@
 import os
 import sys
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -8,7 +9,7 @@ SOURCE_URL = os.environ.get("SOURCE_URL")
 TIMEOUT = 30
 
 
-def check_source():
+def find_lakers_items():
     if not SOURCE_URL:
         raise RuntimeError("No se ha configurado SOURCE_URL")
 
@@ -26,14 +27,37 @@ def check_source():
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    print(f"Página recibida correctamente.")
-    print(f"Título: {soup.title.get_text(strip=True) if soup.title else '(sin título)'}")
+    results = []
+
+    for link in soup.find_all("a", href=True):
+        title = link.get_text(" ", strip=True)
+
+        if "lakers" not in title.lower():
+            continue
+
+        results.append({
+            "title": title,
+            "url": link["href"],
+        })
+
+    return results
 
 
 def main():
     print("=== Gasolina Watcher ===")
-    check_source()
-    print("Comprobación terminada correctamente.")
+
+    items = find_lakers_items()
+
+    if not items:
+        print("No se encontraron elementos que mencionen Lakers.")
+        return
+
+    print(f"Encontrados: {len(items)}")
+
+    for item in items:
+        print()
+        print(f"Título: {item['title']}")
+        print(f"URL: {item['url']}")
 
 
 if __name__ == "__main__":

@@ -176,6 +176,8 @@ def find_lakers_items():
 def main():
     print("=== Gasolina Watcher ===")
 
+    inspect_login_form()
+
     state = load_state()
     seen = set(state["seen"])
 

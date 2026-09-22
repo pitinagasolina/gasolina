@@ -28,3 +28,17 @@ jobs:
         env:
           SOURCE_URL: ${{ secrets.SOURCE_URL }}
         run: python src/watcher.py
+
+      - name: Guardar estado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add state/state.json
+
+          if git diff --cached --quiet; then
+            echo "No hay cambios en el estado."
+          else
+            git commit -m "Update watcher state"
+            git push
+          fi

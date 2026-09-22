@@ -83,50 +83,103 @@ def save_state(state):
         encoding="utf-8",
     )
 
-def inspect_login_form():
-    login_url = "https://720pier.ru/ucp.php?mode=login"
+def login_720pier():
+    username = os.environ.get("FORUM_USERNAME")
+    password = os.environ.get("FORUM_PASSWORD")
+
+    if not username or not password:
+        raise RuntimeError(
+            "Faltan FORUM_USERNAME o FORUM_PASSWORD"
+        )
 
     session = requests.Session()
 
+    session.headers.update({
+        "User-Agent": "GasolinaWatcher/1.0"
+    })
+
+    login_url = "https://720pier.ru/ucp.php?mode=login"
+
+    # 1. Obtener el formulario y los tokens dinámicos.
     response = session.get(
         login_url,
         timeout=TIMEOUT,
-        headers={
-            "User-Agent": "GasolinaWatcher/1.0"
-        },
     )
 
     response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    print("=== DIAGNÓSTICO LOGIN ===")
-    print("URL final:", response.url)
-    print("Status:", response.status_code)
-    print("Título:", soup.title.get_text(" ", strip=True) if soup.title else "")
+    login_form = None
 
-    forms = soup.find_all("form")
+    for form in soup.find_all("form"):
+        username_field = form.find(
+            "input",
+            {"name": "username"}
+        )
 
-    print("Formularios encontrados:", len(forms))
+        password_field = form.find(
+            "input",
+            {"name": "password"}
+        )
 
-    for index, form in enumerate(forms, start=1):
-        print()
-        print(f"--- FORMULARIO {index} ---")
-        print("Action:", form.get("action"))
-        print("Method:", form.get("method"))
+        if username_field and password_field:
+            login_form = form
+            break
 
-        fields = form.find_all(["input", "button"])
+    if login_form is None:
+        raise RuntimeError(
+            "No se encontró el formulario de login"
+        )
 
-        print("Campos:", len(fields))
+    data = {}
 
-        for field in fields:
-            print(
-                "Campo:",
-                field.name,
-                "name=", field.get("name"),
-                "type=", field.get("type"),
-                "value=", field.get("value")
-            )
+    for field in login_form.find_all("input"):
+        name = field.get("name")
+
+        if not name:
+            continue
+
+        input_type = field.get("type", "").lower()
+
+        if input_type in ("submit", "button"):
+            continue
+
+        if input_type in ("checkbox", "radio"):
+            if field.has_attr("checked"):
+                data[name] = field.get("value", "on")
+            continue
+
+        data[name] = field.get("value", "")
+
+    data["username"] = username
+    data["password"] = password
+    data["login"] = "Вход"
+
+    action = login_form.get("action")
+
+    if not action:
+        action = login_url
+
+    action_url = urljoin(
+        response.url,
+        action
+    )
+
+    # 2. Enviar login usando la misma sesión.
+    login_response = session.post(
+        action_url,
+        data=data,
+        timeout=TIMEOUT,
+        allow_redirects=True,
+    )
+
+    login_response.raise_for_status()
+
+    print("Login enviado correctamente.")
+    print("URL después del login:", login_response.url)
+
+    return session
 
 def find_lakers_items():
     if not SOURCE_URL:

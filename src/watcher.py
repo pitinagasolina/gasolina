@@ -9,18 +9,21 @@ from bs4 import BeautifulSoup
 
 
 SOURCE_URL = os.environ.get("SOURCE_URL")
-FORUM_USERNAME = os.environ.get("FORUM_USERNAME")
-FORUM_PASSWORD = os.environ.get("FORUM_PASSWORD")
-
 TIMEOUT = 30
 STATE_FILE = Path("state/state.json")
 
 
 def normalize_url(url):
+    """
+    Normaliza una URL para que pequeñas diferencias no creen
+    entradas duplicadas.
+
+    El parámetro sid es una sesión del foro y no identifica
+    de forma única una entrada.
+    """
+
     parts = urlsplit(url)
 
-    # El parámetro sid cambia entre sesiones y no identifica
-    # de forma única el tema del foro.
     query_parts = []
 
     for parameter in parts.query.split("&"):
@@ -58,7 +61,6 @@ def load_state():
 
     seen = state.get("seen", [])
 
-    # Normalizar y eliminar duplicados antiguos.
     normalized_seen = sorted({
         normalize_url(url)
         for url in seen
@@ -86,45 +88,28 @@ def find_lakers_items():
     if not SOURCE_URL:
         raise RuntimeError("No se ha configurado SOURCE_URL")
 
-    if not FORUM_USERNAME:
-        raise RuntimeError("No se ha configurado FORUM_USERNAME")
-
-    if not FORUM_PASSWORD:
-        raise RuntimeError("No se ha configurado FORUM_PASSWORD")
-
     print(f"Consultando: {SOURCE_URL}")
 
-    session = requests.Session()
-
-    session.headers.update({
-        "User-Agent": "GasolinaWatcher/1.0"
-    })
-
-    login_url = "https://720pier.ru/ucp.php?mode=login"
-
-    login_response = session.get(
-        login_url,
+    response = requests.get(
+        SOURCE_URL,
         timeout=TIMEOUT,
-    )
-
-    login_response.raise_for_status()
-
-    login_data = {
-        "username": FORUM_USERNAME,
-        "password": FORUM_PASSWORD,
-        "login": "Войти",
-    }
-
-    response = session.post(
-        login_url,
-        data=login_data,
-        timeout=TIMEOUT,
+        headers={
+            "User-Agent": "GasolinaWatcher/1.0"
+        },
         allow_redirects=True,
     )
+
+    print(f"URL final: {response.url}")
+    print(f"Status HTTP: {response.status_code}")
 
     response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
+
+    # Diagnóstico: si el foro nos manda al login,
+    # podremos verlo directamente en el log.
+    page_title = soup.title.get_text(" ", strip=True) if soup.title else ""
+    print(f"Título de la página: {page_title}")
 
     results = []
     found_urls = set()

@@ -273,7 +273,10 @@ def main():
 
     session = login_720pier()
 
+    test_download_torrent(session)
+
     items = find_lakers_items(session)
+
 
     print(f"Entradas Lakers encontradas: {len(items)}")
     print(f"Entradas ya registradas: {len(seen)}")

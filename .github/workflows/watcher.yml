@@ -25,9 +25,11 @@ jobs:
           pip install -r requirements.txt
 
       - name: Ejecutar watcher
-        env:
-          SOURCE_URL: ${{ secrets.SOURCE_URL }}
-        run: python src/watcher.py
+  env:
+    SOURCE_URL: ${{ secrets.SOURCE_URL }}
+    FORUM_USERNAME: ${{ secrets.FORUM_USERNAME }}
+    FORUM_PASSWORD: ${{ secrets.FORUM_PASSWORD }}
+  run: python src/watcher.py
 
       - name: Guardar estado
         run: |

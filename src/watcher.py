@@ -83,11 +83,12 @@ def save_state(state):
         encoding="utf-8",
     )
 
-
 def inspect_login_form():
     login_url = "https://720pier.ru/ucp.php?mode=login"
 
-    response = requests.get(
+    session = requests.Session()
+
+    response = session.get(
         login_url,
         timeout=TIMEOUT,
         headers={
@@ -99,24 +100,33 @@ def inspect_login_form():
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    form = soup.find("form")
+    print("=== DIAGNÓSTICO LOGIN ===")
+    print("URL final:", response.url)
+    print("Status:", response.status_code)
+    print("Título:", soup.title.get_text(" ", strip=True) if soup.title else "")
 
-    if not form:
-        print("No se encontró formulario de login")
-        return
+    forms = soup.find_all("form")
 
-    print("=== FORMULARIO LOGIN ===")
-    print("Action:", form.get("action"))
-    print("Method:", form.get("method"))
+    print("Formularios encontrados:", len(forms))
 
-    for field in form.find_all(["input", "button"]):
-        print(
-            "Campo:",
-            field.name,
-            "name=", field.get("name"),
-            "type=", field.get("type"),
-            "value=", field.get("value")
-        )
+    for index, form in enumerate(forms, start=1):
+        print()
+        print(f"--- FORMULARIO {index} ---")
+        print("Action:", form.get("action"))
+        print("Method:", form.get("method"))
+
+        fields = form.find_all(["input", "button"])
+
+        print("Campos:", len(fields))
+
+        for field in fields:
+            print(
+                "Campo:",
+                field.name,
+                "name=", field.get("name"),
+                "type=", field.get("type"),
+                "value=", field.get("value")
+            )
 
 def find_lakers_items():
     if not SOURCE_URL:

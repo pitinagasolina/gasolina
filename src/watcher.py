@@ -87,14 +87,40 @@ def find_lakers_items():
     if not SOURCE_URL:
         raise RuntimeError("No se ha configurado SOURCE_URL")
 
+    if not FORUM_USERNAME:
+        raise RuntimeError("No se ha configurado FORUM_USERNAME")
+
+    if not FORUM_PASSWORD:
+        raise RuntimeError("No se ha configurado FORUM_PASSWORD")
+
     print(f"Consultando: {SOURCE_URL}")
 
-    response = requests.get(
-        SOURCE_URL,
+    session = requests.Session()
+
+    session.headers.update({
+        "User-Agent": "GasolinaWatcher/1.0"
+    })
+
+    login_url = "https://720pier.ru/ucp.php?mode=login"
+
+    login_response = session.get(
+        login_url,
         timeout=TIMEOUT,
-        headers={
-            "User-Agent": "GasolinaWatcher/1.0"
-        },
+    )
+
+    login_response.raise_for_status()
+
+    login_data = {
+        "username": FORUM_USERNAME,
+        "password": FORUM_PASSWORD,
+        "login": "Войти",
+    }
+
+    response = session.post(
+        login_url,
+        data=login_data,
+        timeout=TIMEOUT,
+        allow_redirects=True,
     )
 
     response.raise_for_status()

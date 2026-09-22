@@ -183,29 +183,72 @@ def login_720pier():
 
 def test_download_torrent(session):
     torrent_url = "https://720pier.ru/download/torrent?id=74907"
+    topic_url = "https://720pier.ru/viewtopic.php?t=75712"
 
-    print("=== PRUEBA DESCARGA TORRENT ===")
-    print("Descargando torrent...")
+    print("=== DIAGNÓSTICO SESIÓN ===")
 
-    response = session.get(
-        torrent_url,
+    # No mostramos los valores de las cookies por seguridad.
+    print("Cookies después del login:")
+
+    for cookie in session.cookies:
+        print(
+            f"  {cookie.name} "
+            f"(domain={cookie.domain}, path={cookie.path})"
+        )
+
+    # Primero visitamos la entrada usando LA MISMA sesión.
+    print("Consultando entrada:", topic_url)
+
+    topic_response = session.get(
+        topic_url,
         timeout=TIMEOUT,
+        headers={
+            "Referer": "https://720pier.ru/"
+        },
         allow_redirects=True,
     )
 
-    print("Status descarga:", response.status_code)
-    print("URL final descarga:", response.url)
-    print("Content-Type:", response.headers.get("Content-Type"))
-    print("Bytes recibidos:", len(response.content))
+    print("Status entrada:", topic_response.status_code)
+    print("URL entrada:", topic_response.url)
 
-    response.raise_for_status()
+    topic_response.raise_for_status()
+
+    # Ahora intentamos el torrent desde esa misma sesión.
+    print("Descargando torrent:", torrent_url)
+
+    torrent_response = session.get(
+        torrent_url,
+        timeout=TIMEOUT,
+        headers={
+            "Referer": topic_response.url,
+        },
+        allow_redirects=True,
+    )
+
+    print("Status torrent:", torrent_response.status_code)
+    print("URL final torrent:", torrent_response.url)
+    print(
+        "Content-Type torrent:",
+        torrent_response.headers.get("Content-Type")
+    )
+    print(
+        "Bytes recibidos:",
+        len(torrent_response.content)
+    )
+
+    if torrent_response.status_code != 200:
+        print(
+            "Respuesta del servidor:",
+            torrent_response.text[:500]
+        )
+
+    torrent_response.raise_for_status()
 
     output_dir = Path("downloads")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_file = output_dir / "test-74907.torrent"
-
-    output_file.write_bytes(response.content)
+    output_file.write_bytes(torrent_response.content)
 
     print(f"Torrent guardado en: {output_file}")
 

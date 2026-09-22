@@ -181,6 +181,34 @@ def login_720pier():
 
     return session
 
+def test_download_torrent(session):
+    torrent_url = "https://720pier.ru/download/torrent?id=74907"
+
+    print("=== PRUEBA DESCARGA TORRENT ===")
+    print("Descargando torrent...")
+
+    response = session.get(
+        torrent_url,
+        timeout=TIMEOUT,
+        allow_redirects=True,
+    )
+
+    print("Status descarga:", response.status_code)
+    print("URL final descarga:", response.url)
+    print("Content-Type:", response.headers.get("Content-Type"))
+    print("Bytes recibidos:", len(response.content))
+
+    response.raise_for_status()
+
+    output_dir = Path("downloads")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_file = output_dir / "test-74907.torrent"
+
+    output_file.write_bytes(response.content)
+
+    print(f"Torrent guardado en: {output_file}")
+
 def find_lakers_items(session=None):
     if session is None:
         session = requests.Session()

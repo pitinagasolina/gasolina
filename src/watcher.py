@@ -9,8 +9,12 @@ from bs4 import BeautifulSoup
 
 
 SOURCE_URL = os.environ.get("SOURCE_URL")
+FORUM_USERNAME = os.environ.get("FORUM_USERNAME")
+FORUM_PASSWORD = os.environ.get("FORUM_PASSWORD")
+
 TIMEOUT = 30
 STATE_FILE = Path("state/state.json")
+
 
 
 def normalize_url(url):

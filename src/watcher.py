@@ -14,24 +14,32 @@ STATE_FILE = Path("state/state.json")
 
 
 def normalize_url(url):
-    """
-    Normaliza una URL para que pequeñas diferencias no creen
-    entradas duplicadas.
-    """
-
     parts = urlsplit(url)
 
-    # Quitamos fragmentos (#...)
-    # y espacios innecesarios.
-    normalized = urlunsplit((
+    # El parámetro sid cambia entre sesiones y no identifica
+    # de forma única el tema del foro.
+    query_parts = []
+
+    for parameter in parts.query.split("&"):
+        if not parameter:
+            continue
+
+        key = parameter.split("=", 1)[0].lower()
+
+        if key == "sid":
+            continue
+
+        query_parts.append(parameter)
+
+    query = "&".join(query_parts)
+
+    return urlunsplit((
         parts.scheme,
         parts.netloc,
         parts.path.rstrip("/"),
-        parts.query,
+        query,
         "",
     ))
-
-    return normalized
 
 
 def load_state():

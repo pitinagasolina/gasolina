@@ -2,7 +2,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import requests
 from bs4 import BeautifulSoup
@@ -13,14 +13,49 @@ TIMEOUT = 30
 STATE_FILE = Path("state/state.json")
 
 
+def normalize_url(url):
+    """
+    Normaliza una URL para que pequeñas diferencias no creen
+    entradas duplicadas.
+    """
+
+    parts = urlsplit(url)
+
+    # Quitamos fragmentos (#...)
+    # y espacios innecesarios.
+    normalized = urlunsplit((
+        parts.scheme,
+        parts.netloc,
+        parts.path.rstrip("/"),
+        parts.query,
+        "",
+    ))
+
+    return normalized
+
+
 def load_state():
     if not STATE_FILE.exists():
         return {"seen": []}
 
     try:
-        return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        state = json.loads(
+            STATE_FILE.read_text(encoding="utf-8")
+        )
     except json.JSONDecodeError:
         return {"seen": []}
+
+    seen = state.get("seen", [])
+
+    # Normalizar y eliminar duplicados antiguos.
+    normalized_seen = sorted({
+        normalize_url(url)
+        for url in seen
+    })
+
+    return {
+        "seen": normalized_seen
+    }
 
 
 def save_state(state):
@@ -55,6 +90,7 @@ def find_lakers_items():
     soup = BeautifulSoup(response.text, "html.parser")
 
     results = []
+    found_urls = set()
 
     for link in soup.find_all("a", href=True):
         title = link.get_text(" ", strip=True)
@@ -62,7 +98,16 @@ def find_lakers_items():
         if "lakers" not in title.lower():
             continue
 
-        url = urljoin(SOURCE_URL, link["href"])
+        url = normalize_url(
+            urljoin(SOURCE_URL, link["href"])
+        )
+
+        # Evitar que el mismo enlace aparezca varias veces
+        # en la página.
+        if url in found_urls:
+            continue
+
+        found_urls.add(url)
 
         results.append({
             "title": title,
@@ -76,12 +121,12 @@ def main():
     print("=== Gasolina Watcher ===")
 
     state = load_state()
-    seen = set(state.get("seen", []))
+    seen = set(state["seen"])
 
     items = find_lakers_items()
 
     print(f"Entradas Lakers encontradas: {len(items)}")
-    print(f"Entradas Lakers ya conocidas: {len(seen)}")
+    print(f"Entradas ya registradas: {len(seen)}")
 
     new_items = []
 
@@ -100,15 +145,18 @@ def main():
             print(f"Título: {item['title']}")
             print(f"URL: {item['url']}")
 
-            seen.add(item["url"])
+    # Incorporamos las entradas actuales al estado.
+    # El set garantiza que nunca haya duplicados.
+    for item in items:
+        seen.add(item["url"])
 
-    # Guardamos como conocidas las entradas que hemos visto.
     state["seen"] = sorted(seen)
 
     save_state(state)
 
     print()
     print("Estado guardado correctamente.")
+    print(f"Total de URLs almacenadas: {len(state['seen'])}")
 
 
 if __name__ == "__main__":

@@ -181,20 +181,23 @@ def login_720pier():
 
     return session
 
-def find_lakers_items():
+def find_lakers_items(session=None):
     if not SOURCE_URL:
         raise RuntimeError("No se ha configurado SOURCE_URL")
 
     print(f"Consultando: {SOURCE_URL}")
 
-    response = requests.get(
-        SOURCE_URL,
-        timeout=TIMEOUT,
-        headers={
-            "User-Agent": "GasolinaWatcher/1.0"
-        },
-        allow_redirects=True,
-    )
+    if session is None:
+    session = requests.Session()
+
+    session.headers.update({
+        "User-Agent": "GasolinaWatcher/1.0"
+    })
+
+response = session.get(
+    SOURCE_URL,
+    timeout=TIMEOUT,
+    allow_redirects=True,
 
     print(f"URL final: {response.url}")
     print(f"Status HTTP: {response.status_code}")
@@ -244,7 +247,9 @@ def main():
     state = load_state()
     seen = set(state["seen"])
 
-    items = find_lakers_items()
+    session = login_720pier()
+    items = find_lakers_items(session)
+
 
     print(f"Entradas Lakers encontradas: {len(items)}")
     print(f"Entradas ya registradas: {len(seen)}")

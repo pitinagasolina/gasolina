@@ -16,7 +16,6 @@ TIMEOUT = 30
 STATE_FILE = Path("state/state.json")
 
 
-
 def normalize_url(url):
     parts = urlsplit(url)
 

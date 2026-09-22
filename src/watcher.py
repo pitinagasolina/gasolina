@@ -84,6 +84,40 @@ def save_state(state):
     )
 
 
+def inspect_login_form():
+    login_url = "https://720pier.ru/ucp.php?mode=login"
+
+    response = requests.get(
+        login_url,
+        timeout=TIMEOUT,
+        headers={
+            "User-Agent": "GasolinaWatcher/1.0"
+        },
+    )
+
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    form = soup.find("form")
+
+    if not form:
+        print("No se encontró formulario de login")
+        return
+
+    print("=== FORMULARIO LOGIN ===")
+    print("Action:", form.get("action"))
+    print("Method:", form.get("method"))
+
+    for field in form.find_all(["input", "button"]):
+        print(
+            "Campo:",
+            field.name,
+            "name=", field.get("name"),
+            "type=", field.get("type"),
+            "value=", field.get("value")
+        )
+
 def find_lakers_items():
     if not SOURCE_URL:
         raise RuntimeError("No se ha configurado SOURCE_URL")

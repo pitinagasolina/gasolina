@@ -240,14 +240,12 @@ def find_lakers_items(session=None):
 def main():
     print("=== Gasolina Watcher ===")
 
-    inspect_login_form()
-
     state = load_state()
     seen = set(state["seen"])
 
     session = login_720pier()
-    items = find_lakers_items(session)
 
+    items = find_lakers_items(session)
 
     print(f"Entradas Lakers encontradas: {len(items)}")
     print(f"Entradas ya registradas: {len(seen)}")

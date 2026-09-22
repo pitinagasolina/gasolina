@@ -31,6 +31,7 @@ jobs:
           FORUM_PASSWORD: ${{ secrets.FORUM_PASSWORD }}
         run: python src/watcher.py
 
+
       - name: Guardar estado
         run: |
           git config user.name "github-actions[bot]"

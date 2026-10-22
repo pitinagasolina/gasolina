@@ -1,54 +1,8 @@
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>gasolina/</title>
-</head>
-<body>
-    <h1>gasolina/</h1>
-    <ul id="lista">
-        <li>Cargando archivos...</li>
-    </ul>
-
-    <script>
-        const api = "https://api.github.com/repos/pitinagasolina/gasolina/contents/";
-
-        fetch(api)
-            .then(respuesta => {
-                if (!respuesta.ok) {
-                    throw new Error("No se pudo acceder al repositorio");
-                }
-                return respuesta.json();
-            })
-            .then(archivos => {
-                const lista = document.getElementById("lista");
-                lista.replaceChildren();
-
-                archivos
-                    .filter(archivo => archivo.type === "file")
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .forEach(archivo => {
-                        const li = document.createElement("li");
-                        const enlace = document.createElement("a");
-
-                        enlace.href = archivo.download_url;
-                        enlace.textContent = archivo.name;
-
-                        li.appendChild(enlace);
-                        lista.appendChild(li);
-                    });
-
-                if (lista.children.length === 0) {
-                    lista.textContent = "No hay archivos.";
-                }
-            })
-            .catch(error => {
-                document.getElementById("lista").textContent =
-                    "Error al cargar los archivos.";
-                console.error(error);
-            });
-    </script>
-</body>
+<html>
+ <head>
+ <h1>gasolina/</h1>
+ </head>
+ <body>
+    <li><a href="gasolina.torrent">gasolina.torrent</a><td></td></li>
+ </body>
 </html>
